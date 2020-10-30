@@ -16,18 +16,18 @@ struct ColorRange
 
 class ThresholdColor
 {
-public:
+protected:
 	cv::Mat src;
 	cv::Mat result;
 	std::vector<ColorRange> colorsRange;
 
-	ThresholdColor();
+public:
 	ThresholdColor(const cv::Mat& source);
-
 	void setColor(int channel, int min, int max);
 	void setColor(int channel, const ColorRange& range);
 	virtual void filter();
-
+	cv::Mat& getResult();
+protected:
 	bool checkIfInRange(const int& values, int min, int max);
 	void setThreshold(uchar* sourcePtr, uchar* resultPtr, int min, int max);
 };

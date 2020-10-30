@@ -1,10 +1,5 @@
 #include "ThresholdColor.h"
 #include <vector>
-
-ThresholdColor::ThresholdColor()
-{
-}
-
 ThresholdColor::ThresholdColor(const cv::Mat& source) : src(source)
 {
 	colorsRange = { ColorRange(0, 255), ColorRange(0, 255), ColorRange(0, 255) };
@@ -34,6 +29,11 @@ void ThresholdColor::filter()
 		setThreshold(sourcePtr++, resultPtr++, colorsRange[1].min, colorsRange[1].max);
 		setThreshold(sourcePtr++, resultPtr++, colorsRange[2].min, colorsRange[2].max);
 	}
+}
+
+cv::Mat& ThresholdColor::getResult()
+{
+	return result;
 }
 
 

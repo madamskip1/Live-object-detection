@@ -28,6 +28,7 @@ public:
 	virtual void filter();
 	cv::Mat& getResult();
 protected:
+	ThresholdColor() {};
 	bool checkIfInRange(const int& values, int min, int max);
 	void setThreshold(uchar* sourcePtr, uchar* resultPtr, int min, int max);
 };

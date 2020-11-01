@@ -1,82 +1,76 @@
 #include "FilterImage.h"
 #include <iostream>
+#include <vector>
 
-FilterImage::FilterImage(const cv::Mat & source) : src(source)
+FilterImage::FilterImage(const cv::Mat& source) : src(source)
 {
-	result = cv::Mat_<cv::Vec3b>::zeros(cv::Size(source.rows, source.cols));
+	result = cv::Mat(src.rows, src.cols, src.type());
 }
 
 FilterImage::FilterImage(const cv::Mat& source, const cv::Mat& kernel) : src(source), kernel(kernel)
 {
-	result = cv::Mat_<cv::Vec3b>::zeros(cv::Size(source.rows, source.cols));
+	result = cv::Mat(src.rows, src.cols, src.type());
 }
 
 void FilterImage::filter()
 {
-	int kernelRows = kernel.rows;
-	int kernelCols = kernel.cols;
-	int fromCenterX = kernelCols / 2;
-	int fromCenterY = kernelRows / 2;
-	float kernelValue;
 	
 	int channels = src.channels();
 	int imgRows = src.rows;
-	int imgCols = src.cols * channels;
+	int imgCols = src.cols;
 
-	float newValue1;
-	float newValue2;
-	float newValue3;
-	
+	int kernelSize = kernel.rows;
+	int fromCenter = kernelSize / 2;
+	float kernelValue;
+	 
+	std::vector<float> newValues;
+	newValues.resize(channels, 0);
+
 	uchar* resultRow;
-	uchar* pixelsToMaskRow;
+	uchar* sourceRow;
 	float* kernelRow;
 
-	int valueSourceX;
-	int valueSourceY;
+	int sourceX;
+	int sourceY;
 
 	for (int imgY = 0; imgY < imgRows; imgY++)
 	{
 		resultRow = result.ptr<uchar>(imgY);
-		for (int imgX = 0; imgX < imgCols; imgX = imgX + 3)
+		for (int imgX = 0; imgX < imgCols; imgX++)
 		{
-			newValue1 = 0;
-			newValue2 = 0;
-			newValue3 = 0;
-
-			kernelRow = reinterpret_cast<float*>(kernel.data);
-
-			for (int kernelY = 0; kernelY < kernelRows; kernelY++)
+			std::fill(newValues.begin(), newValues.end(), 0);
+			for (int kernelY = 0; kernelY < kernelSize; kernelY++)
 			{
-				valueSourceY = imgY - fromCenterY + kernelY;
-
-				if (valueSourceY >= 0 && valueSourceY < imgRows)
+				kernelRow = kernel.ptr<float>(kernelY);
+				
+				sourceY = imgY - fromCenter + kernelY;
+				if (checkIfBetween(sourceY, 0, imgRows - 1))
 				{
-					pixelsToMaskRow = src.ptr<uchar>(valueSourceY);
+					sourceRow = src.ptr<uchar>(sourceY);
 
-					for (int kernelX = 0; kernelX < kernelCols; kernelX++)
+					for (int kernelX = 0; kernelX < kernelSize; kernelX++)
 					{
-						valueSourceX = imgX - (fromCenterX + kernelX) * channels;
-						
-						if (valueSourceX >= 0 && valueSourceX < imgCols)
+						sourceX = imgX - (fromCenter + kernelX) * channels;
+						if (checkIfBetween(sourceX, 0, imgCols - 1))
 						{
-							kernelValue = *kernelRow;
+							kernelValue = kernelRow[kernelX];
 
-							newValue1 += kernelValue * (int)pixelsToMaskRow[valueSourceX];
-							newValue2 += kernelValue * (int)pixelsToMaskRow[valueSourceX + 1];
-							newValue3 += kernelValue * (int)pixelsToMaskRow[valueSourceX + 2];
+							for (int channel = 0; channel < channels; channel++)
+							{
+								newValues[channel] += kernelValue * (float)sourceRow[sourceX + channel];
+							}
 						}
-
-						++kernelRow;
 					}
 				}
-				else
-					kernelRow += kernelCols;
+
 			}
 
-			setNewValues(resultRow, imgX, newValue1, newValue2, newValue3);
-		}
+			setNewValues(resultRow, imgX, newValues);
 
+
+		}
 	}
+
 }
 
 cv::Mat& FilterImage::getResult()
@@ -84,9 +78,14 @@ cv::Mat& FilterImage::getResult()
 	return result;
 }
 
-bool FilterImage::checkIfPointIsInside(int x, int y, int width, int height)
+bool FilterImage::checkIfPointIsInside(const int& x, const int& y, const int& width, const int& height)
 {
 	return (x >= 0 && x < width&& y >= 0 && y < height);
+}
+
+bool FilterImage::checkIfBetween(const int& val, const int& min, const int& max)
+{
+	return (val >= min && val <= max);
 }
 
 void FilterImage::setKernel(const cv::Mat& newKernel)
@@ -94,15 +93,19 @@ void FilterImage::setKernel(const cv::Mat& newKernel)
 	kernel = newKernel;
 }
 
-
-void FilterImage::setNewValues(uchar* row, int col, float val1, float val2, float val3)
+void FilterImage::setKernel(float newKernel[], int size)
 {
-	trimValue(val1, 0.0f, 255.0f);
-	trimValue(val2, 0.0f, 255.0f);
-	trimValue(val3, 0.0f, 255.0f);
-	row[col] = (uchar)val1;
-	row[col + 1] = (uchar)val2;
-	row[col + 2] = (uchar)val3;
+	kernel = cv::Mat(size, size, CV_32F, newKernel);
+}
+
+
+void FilterImage::setNewValues(uchar* row, const int col, std::vector<float>& values)
+{
+	for (int i = 0; i < values.size(); i++)
+	{
+		trimValue(values[i], 0.0f, 255.0f);
+		row[col + i] = (uchar)values[i];
+	}
 
 }
 

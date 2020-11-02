@@ -2,7 +2,7 @@
 #include <vector>
 ThresholdColor::ThresholdColor(const cv::Mat& source) : src(source)
 {
-	colorsRange = { ColorRange(0, 255), ColorRange(0, 255), ColorRange(0, 255) };
+	colorsRange.resize(src.channels(), ColorRange(0, 255));
 	result = cv::Mat3b::zeros(source.rows, source.cols);
 }
 
@@ -18,16 +18,17 @@ void ThresholdColor::setColor(int channel, const ColorRange& range)
 
 void ThresholdColor::filter()
 {
-	int size = src.rows * src.cols;
+	int channels = src.channels();
+	int size = src.rows * src.cols * channels;
 
+	int channel = 0;
 	uchar* sourcePtr = src.data;
 	uchar* resultPtr = result.data;
 
 	for (int i = 0; i < size; i++)
 	{
-		setThreshold(sourcePtr++, resultPtr++, colorsRange[0].min, colorsRange[0].max);
-		setThreshold(sourcePtr++, resultPtr++, colorsRange[1].min, colorsRange[1].max);
-		setThreshold(sourcePtr++, resultPtr++, colorsRange[2].min, colorsRange[2].max);
+		channel = i % channels;
+		setThreshold(sourcePtr++, resultPtr++, colorsRange[channel].min, colorsRange[channel].max);
 	}
 }
 
@@ -54,23 +55,28 @@ void ThresholdColor::setThreshold(uchar* sourcePtr, uchar* resultPtr, int min, i
 
 void ThresholdColorMono::filter()
 {
-	int size = src.rows * src.cols;
+	int channels = src.channels();
+	int size = src.rows * src.cols ;
+	bool inRange;
 
 	uchar* sourcePtr = src.data;
 	uchar* resultPtr = result.data;
-	int val1;
-	int val2;
-	int val3;
+	int val;
 
 	for (int i = 0; i < size; i++)
 	{
-		val1 = *(sourcePtr++);
-		val2 = *(sourcePtr++);
-		val3 = *(sourcePtr++);
+		inRange = true;
+		for (int i = 0; i < channels; i++)
+		{
+			val = *(sourcePtr++);
+			if (!checkIfInRange(val, colorsRange[i].min, colorsRange[i].max))
+			{
+				inRange = false;
+			}
+		}
 
-		if (checkIfInRange(val1, colorsRange[0].min, colorsRange[0].max)
-			&& checkIfInRange(val2, colorsRange[1].min, colorsRange[1].max)
-			&& checkIfInRange(val3, colorsRange[2].min, colorsRange[2].max))
+
+		if (inRange)
 		{
 			*(resultPtr++) = (uchar)255;
 		}
@@ -86,6 +92,6 @@ void ThresholdColorMono::filter()
 ThresholdColorMono::ThresholdColorMono(const cv::Mat& source)
 {
 	src = source;
-	colorsRange = { ColorRange(0, 255), ColorRange(0, 255), ColorRange(0, 255) };
+	colorsRange.resize(src.channels(), ColorRange(0, 255));
 	result = cv::Mat1b::zeros(source.rows, source.cols);
 }

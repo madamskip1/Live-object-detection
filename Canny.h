@@ -15,5 +15,6 @@ public:
 
 	void noiseReduction();
 	void calculateGradient();
+	void nonMaximumSuppression();
 };
 

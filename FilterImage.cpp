@@ -42,7 +42,7 @@ void FilterImage::filter()
 			for (int kernelY = 0; kernelY < kernelSize; kernelY++)
 			{
 				kernelRow = kernel.ptr<float>(kernelY);
-				
+
 				sourceY = imgY - fromCenter + kernelY;
 				if (checkIfBetween(sourceY, 0, imgRows - 1))
 				{
@@ -64,10 +64,7 @@ void FilterImage::filter()
 				}
 
 			}
-
 			setNewValues(resultRow, imgX, newValues);
-
-
 		}
 	}
 
@@ -103,6 +100,7 @@ void FilterImage::setNewValues(uchar* row, const int col, std::vector<float>& va
 {
 	for (int i = 0; i < values.size(); i++)
 	{
+		values[i] = abs(values[i]);
 		trimValue(values[i], 0.0f, 255.0f);
 		row[col + i] = (uchar)values[i];
 	}

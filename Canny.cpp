@@ -1,7 +1,7 @@
 #include "Canny.h"
 #include "FilterImage.h"
 #include "GradientCalculator.h"
-
+#include "ThresholdColor.h"
 
 Canny::Canny(cv::Mat& source) : src(source)
 {
@@ -24,7 +24,7 @@ void Canny::noiseReduction()
 
 	filter.setKernel(gaussianBlur, 5);
 	filter.filter();
-	cv::imshow("noise", filter.getResult());
+	//cv::imshow("noise", filter.getResult());
 
 	filter.getResult().copyTo(result);
 }
@@ -37,24 +37,26 @@ void Canny::calculateGradient()
 		-1.0f / 9, 0.0f, 1.0f / 9
 	};
 	float sobelY[] = {
-		1.0f / 9, 2.0f / 9, 1.0f / 9,
+		-1.0f / 9, -2.0f / 9, -1.0f / 9,
 		0.0f, 0.0f, 0.0f,
-		-1.0f / 9, -2.0f, -1.0f / 9
+		1.0f / 9, 2.0f / 9, 1.0f / 9
 	};
 
-	FilterImage deriY(result);
-	deriY.setKernel(sobelY, 3);
-	deriY.filter();
-	cv::imshow("sobelY", deriY.getResult());
+	//FilterImage deriY(result);
+	//deriY.setKernel(sobelY, 3);
+	//deriY.filter();
+	//cv::imshow("sobelY", deriY.getResult());
 
-	FilterImage deriX(result);
+	FilterImage deriX(src);
 	deriX.setKernel(sobelX, 3);
 	deriX.filter();
-	cv::imshow("sobelX", deriX.getResult());
+	deriX.getResult().copyTo(result);
+	//cv::imshow("sobelX", deriX.getResult());
 
-	GradientCalculator gradient(deriX.getResult(), deriY.getResult());
-	gradient.calculate();
+	//GradientCalculator gradient(deriX.getResult(), deriY.getResult());
+	//gradient.calculate();
 
-	cv::imshow("gradient", gradient.getResult());
+	//cv::imshow("gradient", gradient.getResult());
+	//gradient.getResult().copyTo(result);
 }
 

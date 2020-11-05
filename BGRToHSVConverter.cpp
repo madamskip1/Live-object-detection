@@ -31,9 +31,9 @@ void BGRToHSVConverter::convert()
 			// V [0, 255]
 			// Odpowiednio w kolejnych kolumnach
 
-			b = sourceRow[imgX];
-			g = sourceRow[imgX + 1];
-			r = sourceRow[imgX + 2];
+			b = (int)sourceRow[imgX];
+			g = (int)sourceRow[imgX + 1];
+			r = (int)sourceRow[imgX + 2];
 			
 			min = std::min({ b, g, r });
 			max = std::max({ b, g, r });
@@ -78,6 +78,9 @@ int BGRToHSVConverter::hue(int b, int g, int r, int max, int delta)
 	}
 
 	h *= 30;
+
+	if (h < 0)
+		h += 180;
 
 	return (int)h;
 }

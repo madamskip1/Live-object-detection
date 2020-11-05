@@ -1,5 +1,5 @@
 #include "BGRToHSVConverter.h"
-
+#include <iostream>
 BGRToHSVConverter::BGRToHSVConverter(const cv::Mat& source) : src(source)
 {
 	result = cv::Mat(src.rows, src.cols, src.type());
@@ -20,10 +20,10 @@ void BGRToHSVConverter::convert()
 
 	for (int imgY = 0; imgY < imgRows; imgY++)
 	{
+		sourceRow = src.ptr<uchar>(imgY);
+		resultRow = result.ptr<uchar>(imgY);
 		for (int imgX = 0; imgX < imgCols; imgX = imgX + 3)
 		{
-			sourceRow = src.ptr<uchar>(imgY);
-			resultRow = src.ptr<uchar>(imgY);
 
 			// Przechowuje HSV w formacie jak OpenCV:
 			// H [0, 179]
@@ -34,7 +34,7 @@ void BGRToHSVConverter::convert()
 			b = sourceRow[imgX];
 			g = sourceRow[imgX + 1];
 			r = sourceRow[imgX + 2];
-
+			
 			min = std::min({ b, g, r });
 			max = std::max({ b, g, r });
 			delta = max - min;
@@ -60,24 +60,34 @@ cv::Mat& BGRToHSVConverter::getResult()
 }
 int BGRToHSVConverter::hue(int b, int g, int r, int max, int delta)
 {
-	int h;
+	float h;
 
 	if (max == r)
-		h = ((60 * ((g - b) / delta) + 360) % 360);
+	{
+		h = (float)(g - b) / delta;
+	}
 	else if (max == g)
-		h = ((60 * ((b - r) / delta) + 360) % 360);
+	{
+		h = (float)(b - r) / delta;
+		h += 2;
+	}
 	else if (max == b)
-		h = ((60 * ((r - g) / delta) + 360) % 360);
+	{
+		h = (float)(r - g) / delta;
+		h += 4;
+	}
 
-	h /= 2; // w tej chwili [0, 359]. Dzielenie przez dwa => [0, 179] jak w openCV
+	h *= 30;
 
-	return h;
+	return (int)h;
 }
 
-int BGRToHSVConverter::saturation(int max, int delta)
+int BGRToHSVConverter::saturation(const int& max, const int& delta)
 {
 	if (max == 0)
 		return 0;
 
-	return delta / max * 255;
+	float result = (float)delta / max * 255;
+
+	return (int)result;
 }

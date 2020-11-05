@@ -19,16 +19,23 @@ void ThresholdColor::setColor(int channel, const ColorRange& range)
 void ThresholdColor::filter()
 {
 	int channels = src.channels();
-	int size = src.rows * src.cols * channels;
+	int imgRows = src.rows;
+	int imgCols = src.cols * channels;
 
+	uchar* sourcePtr;
+	uchar* resultPtr;
 	int channel = 0;
-	uchar* sourcePtr = src.data;
-	uchar* resultPtr = result.data;
 
-	for (int i = 0; i < size; i++)
+	for (int imgY = 0; imgY < imgRows; imgY++)
 	{
-		channel = i % channels;
-		setThreshold(sourcePtr++, resultPtr++, colorsRange[channel].min, colorsRange[channel].max);
+		sourcePtr = src.ptr<uchar>(imgY);
+		resultPtr = result.ptr<uchar>(imgY);
+
+		for (int imgX = 0; imgX < imgCols; imgX++)
+		{
+			channel = imgX % channels;
+			setThreshold(sourcePtr[imgX], resultPtr[imgX], colorsRange[channel].min, colorsRange[channel].max);
+		}
 	}
 }
 
@@ -45,47 +52,53 @@ bool ThresholdColor::checkIfInRange(const int& values, int min, int max)
 	return (values >= min && values <= max);
 }
 
-void ThresholdColor::setThreshold(uchar* sourcePtr, uchar* resultPtr, int min, int max)
+void ThresholdColor::setThreshold(uchar& source, uchar& result, int min, int max)
 {
-	if (checkIfInRange(*sourcePtr, min, max))
-		*resultPtr = (uchar)255;
+	if (checkIfInRange((int)source, min, max))
+		result = (uchar)255;
 	else
-		*resultPtr = (uchar)0;
+		result = (uchar)0;
 }
 
 void ThresholdColorMono::filter()
 {
 	int channels = src.channels();
-	int size = src.rows * src.cols ;
+	int imgRows = src.rows;
+	int imgCols = src.cols;
+	
+	uchar* sourcePtr;
+	uchar* resultPtr;
+	int srcX;
+	int val;
 	bool inRange;
 
-	uchar* sourcePtr = src.data;
-	uchar* resultPtr = result.data;
-	int val;
 
-	for (int i = 0; i < size; i++)
+	for (int imgY = 0; imgY < imgRows; imgY++)
 	{
-		inRange = true;
-		for (int i = 0; i < channels; i++)
+		sourcePtr = src.ptr<uchar>(imgY);
+		resultPtr = result.ptr<uchar>(imgY);
+
+		for (int imgX = 0; imgX < imgCols; imgX++)
 		{
-			val = *(sourcePtr++);
-			if (!checkIfInRange(val, colorsRange[i].min, colorsRange[i].max))
+			srcX = imgX * channels;
+			inRange = true;
+			for (int i = 0; i < channels; i++)
 			{
-				inRange = false;
+				val = (int)sourcePtr[srcX + i];
+
+				if (!checkIfInRange(val, colorsRange[i].min, colorsRange[i].max))
+					inRange = false;
+			}
+
+			if (inRange)
+			{
+				resultPtr[imgX] = (uchar)255;
+			}
+			else
+			{
+				resultPtr[imgX] = (uchar)0;
 			}
 		}
-
-
-		if (inRange)
-		{
-			*(resultPtr++) = (uchar)255;
-		}
-		else
-		{
-			*(resultPtr++) = (uchar)0;
-		}
-
-
 	}
 }
 

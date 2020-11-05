@@ -30,7 +30,7 @@ public:
 protected:
 	ThresholdColor() {};
 	bool checkIfInRange(const int& values, int min, int max);
-	void setThreshold(uchar* sourcePtr, uchar* resultPtr, int min, int max);
+	void setThreshold(uchar& source, uchar& result, int min, int max);
 };
 
 class ThresholdColorMono

@@ -50,11 +50,11 @@ void FilterImage::filter()
 
 					for (int kernelX = 0; kernelX < kernelSize; kernelX++)
 					{
-						sourceX = imgX - (fromCenter + kernelX) * channels;
-						if (checkIfBetween(sourceX, 0, imgCols - 1))
+						sourceX = (imgX - fromCenter + kernelX);
+						if (checkIfBetween(sourceX, 0, (imgCols - 1)))
 						{
 							kernelValue = kernelRow[kernelX];
-
+							sourceX *= channels;
 							for (int channel = 0; channel < channels; channel++)
 							{
 								newValues[channel] += kernelValue * (float)sourceRow[sourceX + channel];
@@ -64,7 +64,7 @@ void FilterImage::filter()
 				}
 
 			}
-			setNewValues(resultRow, imgX, newValues);
+			setNewValues(resultRow, imgX * channels, newValues);
 		}
 	}
 

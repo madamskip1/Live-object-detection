@@ -1,5 +1,13 @@
 #include "Blob.h"
 
+Blob::Blob()
+{
+	topLeft.x = INT_MAX;
+	topLeft.y = INT_MAX;
+	bottomRight.x = INT_MIN;
+	bottomRight.y = INT_MIN;
+}
+
 void Blob::add(int x, int y)
 {
 	topLeft.x = std::min({ x, topLeft.x });

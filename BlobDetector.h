@@ -9,7 +9,6 @@ class BlobDetector
 
 public:
 	void detect(const cv::Mat& src);
-	void blobSearch(std::shared_ptr<Blob> blob, cv::Mat& mat, int x, int y);
 	void draw(cv::Mat& mat);
 	int numberOfBlobs();
 	std::vector<std::shared_ptr<Blob>>& getBlobs();

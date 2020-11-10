@@ -1,54 +1,56 @@
 #include "BlobDetector.h"
+#include <iostream>
 
 void BlobDetector::detect(const cv::Mat& src)
 {
 	cv::Mat temp;
 	src.copyTo(temp);
+
+	std::queue<cv::Point> toCheck;
 	int rows = src.rows;
 	int cols = src.cols;
+	uchar* imgRow;
+	
+	uchar* row;
+	cv::Point center;
 
-	uchar* tempPtr;
-
-	for (int y = 0; y < rows; y++)
+	for (int imgY = 0; imgY < rows; imgY++)
 	{
-		tempPtr = temp.ptr<uchar>(y);
-
-		for (int x = 0; x < cols; x++)
+		imgRow = temp.ptr<uchar>(imgY);
+		for (int imgX = 0; imgX < cols; imgX++)
 		{
-			if (tempPtr[x] == 255)
+			if (imgRow[imgX] == 255)
 			{
-				// tworzy now¹ plamê, a póŸniej przeszukuje
 				std::shared_ptr<Blob> blob = std::make_shared<Blob>();
-				blobSearch(blob, temp, x, y);
+				toCheck.push(cv::Point(imgX, imgY));
+				while (!toCheck.empty())
+				{
+
+					center = toCheck.front();
+					toCheck.pop();
+					blob->add(center.x, center.y);
+					imgRow[center.x] = 0;
+ 
+					for (int y = center.y - 1; y <= center.y + 1; y++)
+					{
+						if (y >= 0 && y < rows)
+						{
+							row = temp.ptr<uchar>(y);
+							for (int x = center.x - 1; x <= center.x + 1; x++)
+							{
+								if (x >= 0 && x < cols && row[x] == 255)
+								{
+									row[x] = 0;
+									toCheck.push(cv::Point(x, y));
+								}
+							}
+						}
+					}
+				}
+
 				blobs.push_back(blob);
 			}
 		}
-	}
-};
-
-void BlobDetector::blobSearch(std::shared_ptr<Blob> blob, cv::Mat& mat, int x, int y)
-{
-	if (!(x >= 0 && x < mat.cols && y >= 0 && y < mat.rows))
-		return;
-
-	uchar* ptr;
-	ptr = mat.ptr<uchar>(y);
-
-	if (ptr[x] == 255)
-	{
-		blob->add(x, y);
-		ptr[x] = 0;
-
-		blobSearch(blob, mat, x + 1, y); // kolejna kolumna
-		blobSearch(blob, mat, x - 1, y); // poprzednia kolumna
-		// poprzedni wiersz
-		blobSearch(blob, mat, x - 1, y - 1);
-		blobSearch(blob, mat, x, y - 1);
-		blobSearch(blob, mat, x + 1, y - 1);
-		// nastêpny wiersz
-		blobSearch(blob, mat, x - 1, y + 1);
-		blobSearch(blob, mat, x, y + 1);
-		blobSearch(blob, mat, x + 1, y + 1);
 	}
 };
 

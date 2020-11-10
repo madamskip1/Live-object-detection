@@ -142,3 +142,27 @@ TEST_CASE("no blob", "[noBlob]")
 	REQUIRE(detector.numberOfBlobs()  == 0);
 
 }
+
+TEST_CASE("big img", "[bigImg]")
+{
+	int rows = 1000;
+	int cols = 1000;
+	uchar* row;
+	cv::Mat mat = cv::Mat1b::zeros(rows, cols);
+	int blobsCounter = 0;
+
+	for (int y = 0; y < rows; y = y + 2)
+	{
+		blobsCounter++;
+		row = mat.ptr<uchar>(y);
+		for (int x = 0; x < cols; x++)
+		{
+			row[x] = 255;
+		}
+	}
+
+	BlobDetector detector;
+	detector.detect(mat);
+
+	REQUIRE(detector.numberOfBlobs() == blobsCounter);
+}

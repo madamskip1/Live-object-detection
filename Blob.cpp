@@ -46,3 +46,8 @@ void Blob::draw(cv::Mat& mat)
 {
 	cv::rectangle(mat, topLeft, bottomRight, cv::Scalar(0, 255, 0));
 }
+
+std::pair<unsigned, unsigned> Blob::getPosition()
+{
+    return std::pair<unsigned, unsigned>(topLeft.x, topLeft.y);
+}

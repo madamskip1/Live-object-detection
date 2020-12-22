@@ -7,8 +7,10 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <iostream>
 #include <unistd.h>
+#include <iostream>
+#include <fstream>
+#include <chrono>
 
 #include "FilterImage.h"
 #include "ThresholdColor.h"

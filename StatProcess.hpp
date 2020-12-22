@@ -7,6 +7,9 @@
 #include <fcntl.h>
 #include <sched.h>
 #include <unistd.h>
+#include <iostream>
+#include <fstream>
+#include <chrono>
 
 #include "globalVariables.h"
 #include "globalFunctions.hpp"

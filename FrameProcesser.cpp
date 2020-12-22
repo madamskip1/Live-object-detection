@@ -6,7 +6,7 @@ int frameProcesser()
     shm_unlink(PROCESSED_SHARED_MEMORY_NAME);
     shm_unlink(STAT_SHARED_MEMORY_NAME);
 
-    const int core_id = 1;
+    const int core_id = 0;
     const pid_t pid = getpid();
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
@@ -101,8 +101,6 @@ int frameProcesser()
     if (readFrameMemPtr == MAP_FAILED)
         printError("mmap");
 
-    struct timespec start, stop;
-    double time;
     unsigned count = 0;
 
     float kernel[] = { 1, 1, 1,
@@ -111,6 +109,14 @@ int frameProcesser()
                        1,
                        1, 1 };
 
+    std::ofstream file("frameProcesser.txt");
+    if (!file.is_open())
+        printError("file not open");
+
+    file << "processingTime ; waitTime" << std::endl;
+
+    auto startWait = std::chrono::steady_clock::now();
+    auto endWait = std::chrono::steady_clock::now();
 
     while (count < FRAME_COUNT)
     {
@@ -118,7 +124,7 @@ int frameProcesser()
         if (sem_wait(&readFrameMemPtr->sem1) == -1)
             printError("sem_wait");
 
-
+        auto start = std::chrono::steady_clock::now();
 
         cv::Mat image(ROWS, COLS, CV_8UC3, readFrameMemPtr->imgData);
         BGRToHSVConverter converter(image);
@@ -137,21 +143,19 @@ int frameProcesser()
         cv::Mat cl = image.clone();
         memcpy(processedMemPtr->imgData, cl.ptr(0), COLS * ROWS * 3);
 
-
-
-        if (clock_gettime(CLOCK_REALTIME, &start) == -1)
-            printError("clock gettime");
-        time = start.tv_sec + (double) (start.tv_nsec) / BILLION;
-
-
+        auto end = std::chrono::steady_clock::now();
+        std::chrono::duration<double, std::milli> time = end - start;
 
         const auto detectionTuple = detector.getDetection();
         statFrameMemPtr->detected = std::get<0>(detectionTuple);
         statFrameMemPtr->x = std::get<1>(detectionTuple);
         statFrameMemPtr->y = std::get<2>(detectionTuple);
-        statFrameMemPtr->processingTime = time;
+        statFrameMemPtr->processingTime = time.count();
 
-
+        std::chrono::duration<double, std::milli> waitTime = endWait
+                                                             - startWait;
+        file << std::setprecision(12) << time.count() << ";" << waitTime.count()
+             << std::endl;
 
         if (sem_post(&readFrameMemPtr->sem2) == -1)
             printError("sem_post");
@@ -162,15 +166,20 @@ int frameProcesser()
         if (sem_post(&statFrameMemPtr->sem1) == -1)
             printError("sem_post");
 
+        startWait = std::chrono::steady_clock::now();
+
         if (sem_wait(&processedMemPtr->sem2) == -1)
             printError("sem_wait");
 
         if (sem_wait(&statFrameMemPtr->sem2) == -1)
             printError("sem_wait");
 
+        endWait = std::chrono::steady_clock::now();
+
         count++;
     }
 
+    file.close();
     shm_unlink(PROCESSED_SHARED_MEMORY_NAME);
     shm_unlink(STAT_SHARED_MEMORY_NAME);
 

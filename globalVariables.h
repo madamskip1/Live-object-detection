@@ -11,7 +11,7 @@ static constexpr const char *STAT_SHARED_MEMORY_NAME = "statshmem";
 
 static constexpr unsigned ROWS { 720 };
 static constexpr unsigned COLS { 1280 };
-static constexpr unsigned FRAME_COUNT { 100 };
+static constexpr unsigned FRAME_COUNT { 250 };
 
 
 struct img

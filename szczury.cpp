@@ -7,7 +7,7 @@
 
 int main()
 {
-    char *argv[2] = { "1", "20" };
+    char *argv[2] = { "1", "15" };
     CreateProc(frameProvider, 2, argv);
     delay(0.1);
     CreateProcInt(frameProcesser);

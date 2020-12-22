@@ -2,9 +2,8 @@
 
 int statProcess()
 {
-#include "DisplayProcess.h"
 
-    const int core_id = 3;
+    const int core_id = 0;
     const pid_t pid = getpid();
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
@@ -63,11 +62,23 @@ int statProcess()
     unsigned sumStatY = 0;
     double sumStatTime = 0;
 
+    std::ofstream file("statProcess.txt");
+    if (!file.is_open())
+        printError("file not open");
+
+    file << "processingTime ; waitTime" << std::endl;
+
+    auto startWait = std::chrono::steady_clock::now();
+    auto endWait = std::chrono::steady_clock::now();
+
     while (count < FRAME_COUNT)
     {
+        startWait = std::chrono::steady_clock::now();
         if (sem_wait(&shmp->sem1) == -1)
             printError("sem_wait");
+        endWait = std::chrono::steady_clock::now();
 
+        auto start = std::chrono::steady_clock::now();
         if (shmp->detected == true)
         {
             detectedCount++;
@@ -75,6 +86,12 @@ int statProcess()
             sumStatY += shmp->y;
         }
         sumStatTime += shmp->processingTime;
+        auto end = std::chrono::steady_clock::now();
+        std::chrono::duration<double, std::milli> time = end - start;
+        std::chrono::duration<double, std::milli> waitTime = endWait
+                - startWait;
+        file << std::setprecision(12) << time.count() << ";" << waitTime.count() << std::endl;
+
 
         if (sem_post(&shmp->sem2) == -1)
             printError("sem_post");
@@ -95,6 +112,7 @@ int statProcess()
               "   mean time: "
               << meanTime << std::endl;
 
+    file.close();
     exit(EXIT_SUCCESS);
     return 0;
 }

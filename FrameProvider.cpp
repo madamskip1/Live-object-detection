@@ -1,10 +1,5 @@
 #include "FrameProvider.h"
 
-#include <opencv2/opencv.hpp>
-#include "globalVariables.h"
-#include "BlobDetector.h"
-#include <iostream>
-
 int frameProvider(int argc, char *argv[])
 {
     shm_unlink(FRAME_SHARED_MEMORY_NAME);
@@ -111,35 +106,45 @@ int frameProvider(int argc, char *argv[])
     if (!cap.open(0))
         return 0;
 
-    struct timespec start, stop;
-    double time;
-    int count = 0;
+    unsigned count = 0;
+
+    std::ofstream file("frameProvider.txt");
+    if (!file.is_open())
+        printError("file not open");
+
+    file << "processingTime ; waitTime" << std::endl;
+
+    auto startWait = std::chrono::steady_clock::now();
+    auto endWait = std::chrono::steady_clock::now();
 
     while (count < FRAME_COUNT)
     {
-
+        auto start = std::chrono::steady_clock::now();
         cv::Mat frame;
         cap >> frame;
         cv::Mat cl = frame.clone();
         memcpy(imgPtr->imgData, cl.ptr(0), COLS * ROWS * 3);
 
-        if (clock_gettime(CLOCK_REALTIME, &start) == -1)
-            printError("clock gettime");
-
-        time = start.tv_sec + (double) (start.tv_nsec) / 1000000;
-//        std::cout << time << ";;";
+        auto end = std::chrono::steady_clock::now();
+        std::chrono::duration<double, std::milli> time = end - start;
+        std::chrono::duration<double, std::milli> waitTime = endWait
+                - startWait;
+        file << std::setprecision(12) << time.count() << ";" << waitTime.count() << std::endl;
 
         if (sem_post(&imgPtr->sem1) == -1)
             printError("sem_post");
 
+        startWait = std::chrono::steady_clock::now();
         delay(1 / freq);
 
         if (sem_wait(&imgPtr->sem2) == -1)
             printError("sem_wait");
+        endWait = std::chrono::steady_clock::now();
 
         count++;
     }
 
+    file.close();
     shm_unlink(FRAME_SHARED_MEMORY_NAME);
     return 0;
 }

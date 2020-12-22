@@ -2,7 +2,7 @@
 
 int frameDisplayer()
 {
-    const int core_id = 2;
+    const int core_id = 0;
     const pid_t pid = getpid();
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
@@ -56,16 +56,32 @@ int frameDisplayer()
 
     unsigned count = 0;
 
+    std::ofstream file("displayProcess.txt");
+    if (!file.is_open())
+        printError("file not open");
+
+    file << "processingTime ; waitTime" << std::endl;
+
+    auto startWait = std::chrono::steady_clock::now();
+    auto endWait = std::chrono::steady_clock::now();
+
     while (count < FRAME_COUNT)
     {
+        startWait = std::chrono::steady_clock::now();
 
         if (sem_wait(&shmp->sem1) == -1)
             printError("sem_wait");
+        endWait = std::chrono::steady_clock::now();
+        auto start = std::chrono::steady_clock::now();
 
         cv::Mat image(ROWS, COLS, CV_8UC3, shmp->imgData);
         cv::imshow("Object Detection", image);
-        if (cv::waitKey(10) == 27)
-            ;
+        cv::waitKey(10);
+
+        auto end = std::chrono::steady_clock::now();
+        std::chrono::duration<double, std::milli> time = end - start;
+        std::chrono::duration<double, std::milli> waitTime = endWait - startWait;
+        file << std::setprecision(12) << time.count() << ";" << waitTime.count() << std::endl;
 
         if (sem_post(&shmp->sem2) == -1)
             printError("sem_post");
@@ -73,6 +89,7 @@ int frameDisplayer()
         count++;
     }
 
+    file.close();
     exit(EXIT_SUCCESS);
     return 0;
 }
